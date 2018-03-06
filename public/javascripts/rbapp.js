@@ -1,3 +1,5 @@
+
+
 var table;
 
 $.get("/players", function(playerList){
@@ -127,6 +129,46 @@ $.get("/players", function(playerList){
     } );
 });
 
+$("#levelOne").click(function(){
+	loadDataTable(table, "levelOne");
+})
+
+$("#levelTwoA").click(function(){
+	loadDataTable(table, "levelTwoA");
+})
+
+$("#levelTwoB").click(function(){
+	loadDataTable(table, "levelTwoB");
+})
+
+$("#levelThree").click(function(){
+	loadDataTable(table, "levelThree");
+})
+
+$("#levelFour").click(function(){
+	loadDataTable(table, "levelFour");
+})
+
+$("#levelFive").click(function(){
+	loadDataTable(table, "levelFive");
+})
+
+$("#levelSix").click(function(){
+	loadDataTable(table, "levelSix");
+})
+
+$("#levelOneD").click(function(){
+	loadDataTable(table, "levelOneD");
+})
+
+$("#levelTwoD").click(function(){
+	loadDataTable(table, "levelTwoD");
+})
+
+$("#morning").click(function(){
+	loadDataTable(table, "morning");
+})
+
 var validateNewPlayerForm = function(){
 	var newPlayer = {}
 	var form = document.forms["newPlayerForm"]
@@ -190,6 +232,76 @@ var validateUpdateEmailForm = function(){
 			data: _data
 		})
 }
+
+var loadDataTable = function(table, level){
+	$('#playerlist').DataTable().clear().destroy();
+    $.get("/players/" + level, function(playerList){
+        table = $('#playerlist').DataTable( {
+        	dom: 'Bfrtip',
+            columnDefs: [ {
+                orderable: false,
+                className: 'select-checkbox',
+                targets:   0
+            } ],
+            select: {
+                style:    'multi',
+                selector: 'td:first-child'
+            },
+            order: [[ 1, 'asc' ]],
+            data: Object.values(playerList),
+            columns:[{
+            	title: 'Select',
+            	data: null,
+            	defaultContent: ''
+            },
+            {
+            	title: 'Last Name',
+            	data: 'lastName'
+            },
+            {
+            	title: 'First Name',
+            	data: 'firstName'
+            },
+            {
+            	title: 'Email',
+            	data: 'email'
+            },
+            {
+            	title: 'Phone Number',
+            	data: 'phoneNumber'
+            }
+            ],
+            buttons: [{
+            	text: "Remove Player",
+            	action: function(){
+            		var numberOfRowsSelected = table.rows('.selected').data().length;
+
+    				if(numberOfRowsSelected < 1){
+    					alert("You have to select at least one row");
+    					return false;
+    				}
+
+    				var rowsSelected = table.rows('.selected').data().toArray();
+
+    				table.rows('.selected').remove();
+
+    				for(idx in rowsSelected){
+    					var tempObj = {};
+    					tempObj[level] = rowsSelected[idx].id
+    					$.ajax({
+    						type: "POST",
+    						url: "/players/removePlayerFromLeague",
+    						data: tempObj
+    					})
+    				}
+            	}
+            }]
+        } );
+    });
+}
+
+
+
 
 
 

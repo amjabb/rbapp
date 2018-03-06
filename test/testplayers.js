@@ -4,12 +4,12 @@ var test = require('./test.js');
 describe('Add and Remove From Player Database', function(){
 	var testId = '';
 	it('should add a new player /addPlayer', function(){
-		var query = [{
+		var query = {
 						"firstName":"Test",
 						"lastName" : "Foo",
 						"phoneNumber": "N/A",
 						"email": "N/A"
-					}]
+					}
 		return test.testPostQ('/players/addPlayer', query)
 			.then(function(res){
 				testId = res.text;
