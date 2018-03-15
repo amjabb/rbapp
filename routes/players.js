@@ -39,7 +39,7 @@ router.post('/movePlayerToLeague', function(req, res, next){
 	var playerId = Object.values(req.body)[0];
 	database.ref('players/' + playerId).once('value').then(function(snapshot) {
 		var playerInfo = snapshot.val();
-		database.ref('leagues/' + season + '/' + level + '/' + playerId).set(playerInfo).then(() => res.send(playerId));
+		database.ref('leagues/' + season + '/' + level + '/players/' + playerId).set(playerInfo).then(() => res.send(playerId));
 	});
 })
 
@@ -59,11 +59,20 @@ router.post('/updateEmail', function(req, res, next){
 	database.ref().update(updates).then(() => res.send(email));
 })
 
+router.post('/updateSeed', function(req, res, next){
+	var playerId = req.body.id;
+	var level = req.body.level;
+	var seed = req.body.seed;
+	var updates = {}
+	updates['leagues/' + season + '/' + level + '/players/' + playerId + '/seed'] = seed;
+	database.ref().update(updates).then(() => res.send({"seed":seed}));
+})
+
 
 router.post('/removePlayerFromLeague', function(req, res, next){
 	var league = Object.keys(req.body)[0];
 	var playerId = Object.values(req.body)[0];
-	database.ref('leagues/' + season + '/' + league + '/' + playerId).remove().then(() => res.send(playerId));
+	database.ref('leagues/' + season + '/' + league + '/players/' + playerId).remove().then(() => res.send(playerId));
 })
 
 router.get('/levelOne', function(req, res, next) {

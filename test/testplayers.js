@@ -33,6 +33,7 @@ describe('Add and Remove From Player Database', function(){
 
 describe('Add and Remove to Different Leauges', function(){
 	var testId = '';
+	var testLeague = 'levelOne';
 	it('should add a new player /addPlayer', function(){
 		var query = [{
 						"firstName":"Test",
@@ -51,7 +52,7 @@ describe('Add and Remove to Different Leauges', function(){
 	})
 	it('should add player to corresponding league /movePlayerToLeague', function(){
 		// {leagueName: id}
-		var query = {"levelOne":testId}
+		var query = {testLeague:testId}
 		return test.testPostQ('/players/movePlayerToLeague', query)
 			.then(function(res){
 				testId = res.text;
@@ -60,6 +61,22 @@ describe('Add and Remove to Different Leauges', function(){
 			.catch(function(err){
 				expect(err).to.eql(null)
 			})
+	})
+	describe('Update Player Seed in League', function(){
+		it('should update a players seed /updateSeed', function(){
+			var query = {}
+			query["id"] = testId;
+			query["level"] = testLeague;
+			query["seed"] = 5;
+			return test.testPostQ('/players/updateSeed', query)
+				.then(function(res){
+					expect(res.status).to.equal(200)
+					expect(JSON.parse(res.text).seed).to.equal(5);
+				})
+				.catch(function(err){
+					expect(err).to.eql(null)
+				})
+		})
 	})
 	it('should remove player from corresponding league /removePlayerFromLeague', function(){
 		// {leagueName: id}

@@ -1,6 +1,10 @@
-
+//Player view
 
 var table;
+var playerScheduleFlag = false;
+var currentLevelInView;
+
+$("#playerScheduleSlider").hide();
 
 $.get("/players", function(playerList){
     table = $('#playerlist').DataTable( {
@@ -20,6 +24,11 @@ $.get("/players", function(playerList){
         	title: 'Select',
         	data: null,
         	defaultContent: ''
+        },
+        {
+        	title: 'Seed',
+        	data: null,
+        	defaultContent: 'N/A'
         },
         {
         	title: 'Last Name',
@@ -129,44 +138,65 @@ $.get("/players", function(playerList){
     } );
 });
 
+var initLevel = function(level){
+	currentLevelInView = level;
+	playerScheduleFlag = true;
+	$('#playerlist').DataTable().clear().destroy();
+	$("#playerScheduleSlider").css('display', 'inline-block');
+	loadDataTable(table, level);
+	$('#playerScheduleSlider').on('change', function() {
+		if(playerScheduleFlag == false){
+			$('#leagueSchedule').remove();
+			document.getElementById("dataTable").innerHTML = "<table id='playerlist' class='display' cellspacing='0' width='100%'></table>";
+			loadDataTable(table, level);
+			playerScheduleFlag = true;
+		} else {
+			$('#playerlist').DataTable().clear().destroy();
+			$('#playerlist').remove();
+    		showScheduleList(level);
+    		playerScheduleFlag = false;
+		}
+	});
+}
+
 $("#levelOne").click(function(){
-	loadDataTable(table, "levelOne");
+	initLevel("levelOne");
 })
 
 $("#levelTwoA").click(function(){
-	loadDataTable(table, "levelTwoA");
+	initLevel("levelTwoA");
 })
 
 $("#levelTwoB").click(function(){
-	loadDataTable(table, "levelTwoB");
+	initLevel("levelTwoB");
 })
 
 $("#levelThree").click(function(){
-	loadDataTable(table, "levelThree");
+	initLevel("levelThree");
 })
 
 $("#levelFour").click(function(){
-	loadDataTable(table, "levelFour");
+	initLevel("levelFour");
 })
 
 $("#levelFive").click(function(){
-	loadDataTable(table, "levelFive");
+	initLevel("levelFive");
 })
 
 $("#levelSix").click(function(){
-	loadDataTable(table, "levelSix");
+	initLevel("levelSix");
 })
 
 $("#levelOneD").click(function(){
-	loadDataTable(table, "levelOneD");
+	initLevel("levelOneD");
 })
 
 $("#levelTwoD").click(function(){
-	loadDataTable(table, "levelTwoD");
+	initLevel("levelTwoD");
 })
 
 $("#morning").click(function(){
-	loadDataTable(table, "morning");
+	initLevel("morning");
 })
 
 var validateNewPlayerForm = function(){
@@ -192,12 +222,12 @@ var validateAddToForm = function(){
 	var playersSelected = table.rows('.selected').data().toArray();
 
 	for(idx in playersSelected){
-		var _data = {}
-		_data[selectedLeague] = playersSelected[idx].id;
+		var player = {}
+		player[selectedLeague] = playersSelected[idx].id;
 		$.ajax({
 			type: "POST",
 			url: "/players/movePlayerToLeague",
-			data: _data
+			data: player
 		})
 	}
 }
@@ -207,13 +237,15 @@ var validateUpdatePhoneForm = function(){
 	var newNumber = form["newPhone"].value;
 	var playerSelected = table.rows('.selected').data().toArray();
 	var playerId = playerSelected[0].id;
-	var _data = {}
-	_data[playerId] = newNumber;
+
+	//Sending in format {id:newNumber}
+	var updateObject = {}
+	updateObject[playerId] = newNumber;
 
 	$.ajax({
 			type: "POST",
 			url: "/players/updatePhone",
-			data: _data
+			data: updateObject
 		})
 
 }
@@ -223,19 +255,40 @@ var validateUpdateEmailForm = function(){
 	var newEmail = form["newEmail"].value;
 	var playerSelected = table.rows('.selected').data().toArray();
 	var playerId = playerSelected[0].id;
-	var _data = {}
-	_data[playerId] = newEmail;
+
+	//Sending in format {id:newEmail}
+	var updateObject = {}
+	updateObject[playerId] = newEmail;
 
 	$.ajax({
 			type: "POST",
 			url: "/players/updateEmail",
-			data: _data
+			data: updateObject
 		})
 }
 
+var validateUpdateSeedForm = function(){
+	var form = document.forms["updateSeedForm"];
+	var newSeed = form["newSeed"].value;
+	var playerSelected = table.rows('.selected').data().toArray();
+	var playerId = playerSelected[0].id;
+
+	var updateObject = {}
+	updateObject["id"] = playerId
+	updateObject["seed"] = newSeed;
+	updateObject["level"] = currentLevelInView;
+
+	$.ajax({
+			type: "POST",
+			url: "/players/updateSeed",
+			data: updateObject
+		})
+}
+
+
 var loadDataTable = function(table, level){
-	$('#playerlist').DataTable().clear().destroy();
-    $.get("/players/" + level, function(playerList){
+    $.get("/players/" + level, function(leagueInfo){
+    	var playerList = leagueInfo['players']
         table = $('#playerlist').DataTable( {
         	dom: 'Bfrtip',
             columnDefs: [ {
@@ -253,6 +306,11 @@ var loadDataTable = function(table, level){
             	title: 'Select',
             	data: null,
             	defaultContent: ''
+            },
+            {
+            	title: 'Seed',
+            	data: 'seed',
+            	defaultContent: '<input type="text" value="0" size="10"/>'
             },
             {
             	title: 'Last Name',
@@ -295,9 +353,49 @@ var loadDataTable = function(table, level){
     					})
     				}
             	}
-            }]
+            },
+	        {
+	        	text: "Record Seeds",
+	        	action: function(){
+	        			var data = table.rows().data();
+						data.each(function (value, index) {
+							var updateObject = {};
+							updateObject["id"] = value["id"];
+							updateObject["seed"] = table.cell(index,1).nodes().to$().find('input').val();
+							updateObject["level"] = currentLevelInView;
+							$.ajax({
+								type: "POST",
+								url: "/players/updateSeed",
+								data: updateObject
+							})
+						});
+		        }
+	        },
+	        {
+	        	text: "Update Seed",
+	        	action: function(){
+	        		var numberOfRowsSelected = table.rows('.selected').data().length;
+
+					if(numberOfRowsSelected == 0){
+						alert("You have to select exactly one row");
+						return false;
+					}
+					
+	        		document.getElementById('updateSeedModal').style.display = "block";
+	        		window.onclick = function(event){
+	        			if(event.target == document.getElementById('updateSeedModal')) {
+	        				document.getElementById('updateSeedModal').style.display = "none"
+	        			}
+		        	}
+		        }
+	        }]
         } );
     });
+}
+
+var showScheduleList = function(level){
+	//Fetch schedule data from database
+	$('#leagueSchedule').show();
 }
 
 
